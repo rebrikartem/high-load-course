@@ -72,9 +72,15 @@ class PaymentExternalSystemAdapterImpl(
         }.build()
 
         try {
-            while (!rateLimiter.tick()) {
-                Unit
+            while (!rateLimiter.tick()) { Unit }
+
+            if (now() + requestAverageProcessingTime.toMillis()  >= deadline) {
+                paymentESService.update(paymentId) {
+                    it.logProcessing(false, now(), transactionId, reason = "Request timeout.")
+                }
+                return
             }
+
             client.newCall(request).execute().use { response ->
                 val body = try {
                     mapper.readValue(response.body?.string(), ExternalSysResponse::class.java)
