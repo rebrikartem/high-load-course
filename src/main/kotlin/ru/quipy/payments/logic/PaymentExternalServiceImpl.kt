@@ -73,7 +73,8 @@ class PaymentExternalSystemAdapterImpl(
             .post(emptyBody)
             .build()
 
-        val maxRetries = 1_000_000
+        val delay = 1000L
+        val maxRetries = 3
         var attempt = 0
         var success = false
         var responseBody: ExternalSysResponse? = null
@@ -122,12 +123,14 @@ class PaymentExternalSystemAdapterImpl(
                     attempt++
                     if (attempt < maxRetries) {
                         logger.warn("[$accountName] Attempt #$attempt failed with code ${e.code} for payment $paymentId. Retrying...", e)
+                        Thread.sleep(delay)
                     }
                 } catch (e: SocketTimeoutException) {
                     lastException = e
                     attempt++
                     if (attempt < maxRetries) {
                         logger.warn("[$accountName] Attempt #$attempt SocketTimeout for payment $paymentId. Retrying...", e)
+                        Thread.sleep(delay)
                     }
                 } catch (e: Exception) {
                     lastException = e
